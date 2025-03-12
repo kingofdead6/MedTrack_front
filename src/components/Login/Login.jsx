@@ -1,123 +1,154 @@
 import { useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
-
-const Register = () => {
+import { useNavigate } from "react-router-dom";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import login from "../../assets/patient.svg";
+export default function Login() {
   const [formData, setFormData] = useState({
-    name: "",
     email: "",
-    phone_number: "",
     password: "",
-    confirmPassword: "",
   });
-  const location = useLocation();
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-  const userType = location.state?.userType; 
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match");
-      return;
-    }
+    setError(null);
+    setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:5000/api/users/register", {
+      const response = await fetch("http://localhost:5000/api/users/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          phone_number: formData.phone_number,
-          password: formData.password, // Send plain password, backend will hash it
-          user_type: userType, // Include user type from the first page
-        }),
+        body: JSON.stringify(formData),
       });
 
       const data = await response.json();
-      if (response.ok) {
-        alert("Registration successful");
-        // Store token in localStorage or context for authenticated routes
-        localStorage.setItem("token", data.token);
-        // Redirect based on user type
-        navigate(userType === "patient" ? "/patient-dashboard" : "/healthcare-dashboard");
-      } else {
-        alert(`Registration failed: ${data.message}`);
+
+      if (!response.ok) {
+        throw new Error(data.message || "Login failed");
       }
-    } catch (error) {
-      console.error("Error during registration:", error);
-      alert("An error occurred during registration");
+
+      localStorage.setItem("token", data.token);
+
+      const { user_type, isApproved } = data.user;
+      if (user_type === "patient") {
+        navigate("/profile", { state: { user: data.user } });
+      } else if (user_type === "healthcare") {
+        if (isApproved) {
+          navigate("/profile", { state: { user: data.user } });
+        } else {
+          setError("Your account is awaiting approval.");
+          localStorage.removeItem("token");
+        }
+      } else if (user_type === "admin") {
+        navigate("/admin");
+      } else {
+        setError("Invalid user type");
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const isFormComplete = formData.email.trim() !== "" && formData.password.trim() !== "";
+
   return (
-    <div className="flex justify-center items-center h-screen bg-gray-100">
-      <div className="bg-white shadow-lg rounded-2xl p-6 flex w-3/5">
-        <div className="w-2/5 bg-blue-200 p-8 rounded-l-2xl flex flex-col justify-center">
-          <h2 className="text-2xl font-bold">
-            Register as a {userType || "user"}
-          </h2>
-          <img src="/register-image.png" alt="Register" className="mt-4" />
+    <div className="min-h-screen flex items-center mx-12 justify-center p-4 mt-16">
+      <div className="w-full max-w-5xl pt-6 pb-6 flex flex-col md:flex-row">
+        {/* Left Section (Image) */}
+        <div className="hidden md:flex md:w-1/2 bg-blue-200 p-6 rounded-r-4xl rounded-l-4xl mr-6">
+          <div className="flex flex-col items-center w-full">
+            <h2 className="text-4xl font-bold pt-10 text-black mb-4">Login</h2>
+            <img src={login} alt="login" className="w-3/4 pt-10" />
+          </div>
         </div>
-        <div className="w-3/5 p-8 text-black">
-          <h2 className="text-xl font-semibold mb-4">Welcome to</h2>
+
+        {/* Right Section (Login Form) */}
+        <div className="w-full md:w-1/2 p-6 shadow-2xl rounded-r-4xl rounded-l-4xl bg-white">
+          <h2 className="text-2xl font-semibold text-gray-900 text-center mb-6">Welcome Back</h2>
+
+          {/* Error Message */}
+          {error && (
+            <div className="bg-red-100 text-red-700 p-3 mb-6 rounded-2xl text-center">{error}</div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-4">
-            <input
-              type="text"
-              name="name"
-              placeholder="Full Name"
-              value={formData.name}
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
-              required
-            />
-            <input
-              type="email"
-              name="email"
-              placeholder="Email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
-              required
-            />
-            <input
-              type="text"
-              name="phone_number"
-              placeholder="Phone Number"
-              value={formData.phone_number}
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
-              required
-            />
-            <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
-              required
-            />
-            <input
-              type="password"
-              name="confirmPassword"
-              placeholder="Repeat Password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
-              required
-            />
-            <button type="submit" className="w-full bg-blue-500 text-white p-2 rounded">
-              Register
+            <div className="mb-4">
+              <label className="block p-2 text-gray-500">Email:</label>
+              <input
+                name="email"
+                type="email"
+                placeholder="Enter your email"
+                value={formData.email}
+                onChange={handleChange}
+                className="w-full p-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-300"
+                required
+                disabled={loading}
+              />
+            </div>
+
+            <div className="mb-4 relative">
+              <label className="block p-2 text-gray-500">Password:</label>
+              <input
+                name="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                value={formData.password}
+                onChange={handleChange}
+                className="w-full p-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-300"
+                required
+                disabled={loading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-16 transform -translate-y-1/2 text-gray-500"
+                disabled={loading}
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center"></div>
+              <a href="#" className="text-blue-500 text-sm hover:underline">
+                Forgot Password?
+              </a>
+            </div>
+
+            <button
+              type="submit"
+              className={`w-2/4 mx-auto block text-white p-3 rounded-2xl shadow-md font-semibold transition duration-300 hover:shadow-lg ${
+                isFormComplete && !loading
+                  ? "bg-[#A5CCFF] hover:bg-blue-700"
+                  : "bg-gray-400 cursor-not-allowed"
+              }`}
+              disabled={!isFormComplete || loading}
+            >
+              {loading ? "Logging in..." : "Login"}
             </button>
           </form>
+
+          <p className="text-center mt-4 text-gray-600">
+            Don’t have an account?{" "}
+            <span
+              className="text-blue-500 cursor-pointer hover:underline"
+              onClick={() => navigate("/register")}
+            >
+              Sign up
+            </span>
+          </p>
         </div>
       </div>
     </div>
   );
-};
-
-export default Register;
+}

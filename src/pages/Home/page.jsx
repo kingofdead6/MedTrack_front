@@ -1,12 +1,18 @@
-import Login from "../../components/Login/Login";
-import HealthCare_Patient from "../../components/Register/HealthCare_Patient";
+import React from 'react'
+import HealthcareServices from '../../components/Home/HealthcareServices';
+import WhyChooseUs from '../../components/Home/WhyChooseUs';
+import HealthcareReviews from '../../components/Home/HealthcareReviews';
+import HealthcareChat from '../../components/Home/HealthcareChat';
+
 const Home = () => {
   return (
-    <div className="bg-gray-900 text-white min-h-screen">
-        <HealthCare_Patient />
-        <Login />
+    <div>
+        <HealthcareServices />
+        <WhyChooseUs />
+        <HealthcareReviews />
+        <HealthcareChat />
     </div>
-  );
-};
+  )
+}
 
-export default Home;
+export default Home ;
