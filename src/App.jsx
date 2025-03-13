@@ -11,6 +11,7 @@ import Admin from "./pages/Admin/page";
 import Home from "./pages/Home/page";
 import Navbar from "./components/Shared/NavBar";
 import UserProfile from "./components/Profile/UserProfile";
+import Chatbot from "./components/ChatBot/ChatBot";
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function App() {
         {/* Main Routes */}
         <Route path="/main" element={<MainPage />} />
       </Routes>
+      <Chatbot />
     </Router>
   );
 }
